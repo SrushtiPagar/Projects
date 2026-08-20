@@ -137,21 +137,27 @@ while True:
 
     now = datetime.now()
 
+    ############################################################################
     # Create today's scheduled datetime
+    ############################################################################
 
     next_run = datetime.combine(
         now.date(),
         schedule_time
     )
 
-    # If today's time has already passed,
+    ############################################################################
+    # If today's scheduled time has already passed,
     # schedule for tomorrow.
+    ############################################################################
 
     if next_run <= now:
 
         next_run = next_run + timedelta(days=1)
 
-    # Calculate waiting time
+    ############################################################################
+    # Display waiting information
+    ############################################################################
 
     waiting_seconds = (
         next_run - now
@@ -183,10 +189,30 @@ while True:
     print("----------------------------------------------")
 
     ############################################################################
-    # Sleep until scheduled time
+    # Wait until scheduled time
+    #
+    # Instead of sleeping for many hours at once,
+    # check the time every 30 seconds.
     ############################################################################
 
-    time.sleep(waiting_seconds)
+    while True:
+
+        now = datetime.now()
+
+        if now >= next_run:
+
+            break
+
+        remaining_seconds = (
+            next_run - now
+        ).total_seconds()
+
+        sleep_time = min(
+            30,
+            remaining_seconds
+        )
+
+        time.sleep(sleep_time)
 
     ############################################################################
     # Scheduled time reached
@@ -200,15 +226,21 @@ while True:
 
     try:
 
-        command = [
-                sys.executable,
-                str(automation_script),
-                args.source_folder,
-                str(args.count),
-                args.github_repo
-            ]
+        ############################################################################
+        # Build automation command
+        ############################################################################
 
+        command = [
+            sys.executable,
+            str(automation_script),
+            args.source_folder,
+            str(args.count),
+            args.github_repo
+        ]
+
+        ############################################################################
         # Add destination folder only if provided
+        ############################################################################
 
         if args.destination_folder:
 
@@ -226,12 +258,16 @@ while True:
         )
 
         print()
-        print("GitHub Automation completed successfully.")
+        print(
+            "GitHub Automation completed successfully."
+        )
 
     except subprocess.CalledProcessError as error:
 
         print()
-        print("GitHub Automation failed.")
+        print(
+            "GitHub Automation failed."
+        )
 
         print(
             "Reason:",
@@ -241,7 +277,9 @@ while True:
     except Exception as error:
 
         print()
-        print("Unexpected error.")
+        print(
+            "Unexpected error."
+        )
 
         print(
             "Reason:",
@@ -249,17 +287,20 @@ while True:
         )
 
     ############################################################################
-    # IMPORTANT:
-    # Do NOT exit.
+    # Today's automation is finished
     #
-    # The while loop starts again and schedules tomorrow's execution.
+    # The outer while loop now starts again and schedules tomorrow.
     ############################################################################
 
     print()
-    print("Today's automation is finished.")
+    print(
+        "Today's automation is finished."
+    )
 
     print(
         "Scheduler will continue running for tomorrow."
     )
 
-    print("==============================================")
+    print(
+        "=============================================="
+    )
