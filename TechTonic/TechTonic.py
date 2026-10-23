@@ -1,14 +1,15 @@
-import streamlit as st
-from ollama import chat
 
-st.set_page_config(page_title="TechTonic - IT & Computer Science AI", page_icon=":robot_face:")
+import streamlit as st
+from groq import Groq
+
+st.set_page_config(page_title="TechTonic", page_icon="💻")
 
 st.title("TechTonic")
 st.header("Think Smart. Code Smarter")
 
 SYSTEM_PROMPT = """
-You are a Python programming teacher specializing in IT and
-Computer Science.
+You are TechTonic, a Python programming teacher
+specializing in IT and Computer Science.
 
 Answer only questions related to:
 - Programming languages
@@ -22,51 +23,57 @@ Answer only questions related to:
 
 If a question is unrelated to IT or Computer Science,
 politely refuse to answer it.
+Explain concepts clearly using examples when useful.
 """
 
-# 1. Initialize chat history ONCE per session
+# Initialize chat history once per session
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 2. Display ALL previous questions and answers
+# Display previous conversation
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 3. Input box for new questions
 question = st.chat_input("Ask an IT or CS question...")
 
 if question:
-    # Add the new question to history
+    # Save and display the user's question
     st.session_state.messages.append({
         "role": "user",
         "content": question
     })
 
-    # Display the new question immediately
     with st.chat_message("user"):
         st.markdown(question)
 
     try:
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                # Include system prompt and entire conversation
-                conversation = [
-                    {
-                        "role": "system",
-                        "content": SYSTEM_PROMPT
-                    }
-                ] + st.session_state.messages
+        # Read the API key from Streamlit Secrets
+        client = Groq(
+            api_key=st.secrets["GROQ_API_KEY"]
+        )
 
-                response = chat(
-                    model="llama3.2:1b",
-                    messages=conversation
+        # Send the full conversation to the hosted model
+        conversation = [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT
+            }
+        ] + st.session_state.messages
+
+        with st.chat_message("assistant"):
+            with st.spinner("TechTonic is thinking..."):
+                response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=conversation,
+                    temperature=0.5,
+                    max_tokens=1024
                 )
 
-                answer = response.message.content
+                answer = response.choices[0].message.content
                 st.markdown(answer)
 
-        # Save the answer so it remains visible
+        # Save the answer for future turns
         st.session_state.messages.append({
             "role": "assistant",
             "content": answer
@@ -75,9 +82,14 @@ if question:
     except Exception as e:
         # Remove the unanswered question so it can be retried
         st.session_state.messages.pop()
-        st.error(f"Unable to generate an answer: {e}")
+        st.error(
+            "Unable to generate an answer. "
+            "Please check your API key, model access, "
+            "and deployment logs."
+        )
+        st.caption(f"Error details: {e}")
 
-# 4. Optional button to clear the conversation
+# Clear conversation
 if st.button("Clear Chat"):
     st.session_state.messages = []
     st.rerun()
