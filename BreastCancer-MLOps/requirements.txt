@@ -1,0 +1,17 @@
+pandas
+numpy
+scikit-learn
+xgboost
+torch
+joblib
+streamlit
+requests
+fastapi
+uvicorn
+redis
+sqlalchemy
+psycopg2-binary
+onnx
+onnxruntime
+skl2onnx
+onnxmltools
